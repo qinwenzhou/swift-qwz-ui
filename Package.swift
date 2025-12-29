@@ -7,7 +7,7 @@ let package = Package(
     name: "swift-qwz-ui",
     platforms: [
         .macOS("13.0"),
-        .iOS("16.0"),
+        .iOS("18.0"),
     ],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
