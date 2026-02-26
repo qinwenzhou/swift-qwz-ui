@@ -9,12 +9,25 @@ import SwiftUI
 import MessageUI
 
 public struct MailView: UIViewControllerRepresentable {
+    public var recipients: [String]
+    public var subject: String
+    public var messageBody: String
     @Binding public var isShowing: Bool
     @Binding public var result: Result<MFMailComposeResult, Error>?
     
-    public var recipients: [String] = []
-    public var subject: String = ""
-    public var messageBody: String = ""
+    public init(
+        recipients: [String] = [],
+        subject: String = "",
+        messageBody: String = "",
+        isShowing: Binding<Bool>,
+        result: Binding<Result<MFMailComposeResult, Error>?>
+    ) {
+        self.recipients = recipients
+        self.subject = subject
+        self.messageBody = messageBody
+        self._isShowing = isShowing
+        self._result = result
+    }
     
     public class Coordinator: NSObject, MFMailComposeViewControllerDelegate {
         @Binding public var isShowing: Bool
