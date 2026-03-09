@@ -16,11 +16,17 @@ let package = Package(
             targets: ["QwzUI"]
         ),
     ],
+    dependencies: [
+        .package(url: "https://github.com/hyperoslo/Lightbox.git", .upToNextMajor(from: "2.5.1")),
+    ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
             name: "QwzUI",
+            dependencies: [
+                .product(name: "Lightbox", package: "Lightbox"),
+            ],
             resources: [
                 .process("Resources")
             ]

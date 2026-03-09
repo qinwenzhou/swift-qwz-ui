@@ -38,7 +38,3 @@ public struct NoDataView: View {
         }
     }
 }
-
-#Preview {
-    NoDataView()
-}
