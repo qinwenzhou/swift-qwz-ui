@@ -10,14 +10,15 @@ import UIKit
 
 public struct HighlightedTextEditor: UIViewRepresentable {
     @Binding public var text: String
+    @Binding public var dynamicHeight: CGFloat
     
-    public var font: UIFont
-    public var textColor: UIColor
+    public var font: UIFont? = nil
+    public var textColor: UIColor? = nil
     
-    public var highlightedPattern: String
-    public var highlightedFont: UIFont
-    public var highlightedForegroundColor: UIColor
-    public var highlightedBackgroundColor: UIColor
+    public var highlightedPattern: String = ""
+    public var highlightedFont: UIFont? = nil
+    public var highlightedForegroundColor: UIColor? = nil
+    public var highlightedBackgroundColor: UIColor? = nil
     
     public func makeUIView(context: Context) -> UITextView {
         let textView = UITextView()
@@ -25,7 +26,9 @@ public struct HighlightedTextEditor: UIViewRepresentable {
         textView.font = self.font
         textView.textColor = self.textColor
         textView.backgroundColor = .clear
-        textView.isScrollEnabled = true
+        textView.isScrollEnabled = false
+        // 防止文字过长把外部视图水平撑爆
+        textView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         return textView
     }
     
@@ -38,10 +41,23 @@ public struct HighlightedTextEditor: UIViewRepresentable {
             uiView.text = text
             applyHighlighting(to: uiView)
         }
+        
+        // 每次视图更新时，重新计算高度
+        DispatchQueue.main.async {
+            self.recalculateHeight(for: uiView)
+        }
     }
     
-    public func makeCoordinator() -> Coordinator {
-        Coordinator(self)
+    // 计算真实高度
+    func recalculateHeight(for textView: UITextView) {
+        // 使用 sizeThatFits 计算 UITextView 需要多高才能显示全内容
+        let targetSize = CGSize(width: textView.bounds.width, height: CGFloat.greatestFiniteMagnitude)
+        let exactSize = textView.sizeThatFits(targetSize)
+        
+        // 只有高度发生变化时再去触发 Binding 刷新，避免死循环
+        if self.dynamicHeight != exactSize.height {
+            self.dynamicHeight = exactSize.height
+        }
     }
     
     // 核心高亮逻辑提取
@@ -62,9 +78,15 @@ public struct HighlightedTextEditor: UIViewRepresentable {
         if let regex = try? NSRegularExpression(pattern: pattern) {
             let matches = regex.matches(in: textContent, range: fullRange)
             for match in matches {
-                attributedString.addAttribute(.font, value: self.highlightedFont, range: match.range)
-                attributedString.addAttribute(.foregroundColor, value: self.highlightedForegroundColor, range: match.range)
-                attributedString.addAttribute(.backgroundColor, value: self.highlightedBackgroundColor, range: match.range)
+                if let hlFont = self.highlightedFont {
+                    attributedString.addAttribute(.font, value: hlFont, range: match.range)
+                }
+                if let hlColor = self.highlightedForegroundColor {
+                    attributedString.addAttribute(.foregroundColor, value: hlColor, range: match.range)
+                }
+                if let hlBgColor = self.highlightedBackgroundColor {
+                    attributedString.addAttribute(.backgroundColor, value: hlBgColor, range: match.range)
+                }
             }
         }
         
@@ -73,6 +95,10 @@ public struct HighlightedTextEditor: UIViewRepresentable {
         
         // 5. 还原光标位置
         textView.selectedRange = selectedRange
+    }
+    
+    public func makeCoordinator() -> Coordinator {
+        Coordinator(self)
     }
     
     // 代理类，用于监听输入事件并将数据同步回 SwiftUI
@@ -86,6 +112,10 @@ public struct HighlightedTextEditor: UIViewRepresentable {
         public func textViewDidChange(_ textView: UITextView) {
             self.parent.text = textView.text
             self.parent.applyHighlighting(to: textView)
+            
+            DispatchQueue.main.async {
+                self.parent.recalculateHeight(for: textView)
+            }
         }
         
         public func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
@@ -93,8 +123,9 @@ public struct HighlightedTextEditor: UIViewRepresentable {
             if text.isEmpty {
                 let currentText = (textView.text ?? "") as NSString
                 let pattern = self.parent.highlightedPattern
-                
-                guard let regex = try? NSRegularExpression(pattern: pattern) else { return true }
+                guard let regex = try? NSRegularExpression(pattern: pattern) else {
+                    return true
+                }
                 
                 // 获取当前所有的变量 Range
                 let fullRange = NSRange(location: 0, length: currentText.length)
