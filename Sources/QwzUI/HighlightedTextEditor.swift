@@ -12,13 +12,33 @@ public struct HighlightedTextEditor: UIViewRepresentable {
     @Binding public var text: String
     @Binding public var dynamicHeight: CGFloat
     
-    public var font: UIFont? = nil
-    public var textColor: UIColor? = nil
+    public var font: UIFont?
+    public var textColor: UIColor?
     
-    public var highlightedPattern: String = ""
-    public var highlightedFont: UIFont? = nil
-    public var highlightedForegroundColor: UIColor? = nil
-    public var highlightedBackgroundColor: UIColor? = nil
+    public var highlightedPattern: String
+    public var highlightedFont: UIFont?
+    public var highlightedForegroundColor: UIColor?
+    public var highlightedBackgroundColor: UIColor?
+
+    public init(
+        text: Binding<String>,
+        dynamicHeight: Binding<CGFloat>,
+        font: UIFont? = nil,
+        textColor: UIColor? = nil,
+        highlightedPattern: String = "",
+        highlightedFont: UIFont? = nil,
+        highlightedForegroundColor: UIColor? = nil,
+        highlightedBackgroundColor: UIColor? = nil
+    ) {
+        self._text = text
+        self._dynamicHeight = dynamicHeight
+        self.font = font
+        self.textColor = textColor
+        self.highlightedPattern = highlightedPattern
+        self.highlightedFont = highlightedFont
+        self.highlightedForegroundColor = highlightedForegroundColor
+        self.highlightedBackgroundColor = highlightedBackgroundColor
+    }
     
     public func makeUIView(context: Context) -> UITextView {
         let textView = UITextView()
